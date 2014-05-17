@@ -161,6 +161,7 @@ int configz_countLabel(const char * configfile,const char * label)
 	fclose(file);
 	return label_num;
 }
+
 int configz_readLKV(const char * configfile, const char * label, const char * key, char * value, int num)
 {
 	if(num < 1)
@@ -204,29 +205,131 @@ int configz_readSLKV(const char * configfile, const char * label, const char * k
 	return configz_readLKV(configfile, label, key, value, 1);
 }
 
+int configz_readString(const char * configfile, const char * label, const char * key, char * value, int num)
+{
+	if(configfile == NULL || key == NULL)
+	{
+		return -1;
+	}
+	if(label == NULL)
+	{
+		return configz_readKV(configfile, key, value);
+	}
+	else if(num == 0)
+	{
+		return configz_readSLKV(configfile, label, key, value);
+	}
+	else
+	{
+		return configz_readLKV(configfile, label, key, value, num);
+	}
+}
+
+int isValidIP(char * buf)
+{
+	if(buf == NULL)
+	{
+		return 0;
+	}
+	int len = strlen(buf);
+	if(len >15 || len < 7)
+	{
+		return 0;
+	}
+	char * p;
+	p = buf;
+	int numCount = 0;
+	int pointCount = 0;
+	char ipnum[4];
+	memset(ipnum,0,4);
+	while(*p != '\0')
+	{
+		if(*p >='0' && *p <='9')
+		{
+			if(numCount > 2)
+			{
+				return 0;
+			}
+			ipnum[numCount] = *p;
+			numCount++;
+		}
+		else if(*p =='.')
+		{
+			pointCount++;
+			if(pointCount > 3)
+			{
+				return 0;
+			}
+			if(numCount == 0)
+			{
+				return 0;
+			}
+			else
+			{
+				ipnum[numCount] = '\0';
+				int num = atoi(ipnum);
+				if(num < 0 || num > 255)
+				{
+					return 0;
+				}
+				numCount = 0;
+			}
+		}
+		else
+		{
+			return 0;
+		}
+		p++;
+	}
+	return 1;
+}
+
+int configz_readIP(const char * configfile, const char * label, const char * key, char * value, int num)
+{
+	if(configz_readString(configfile, label, key, value, num) != 0)
+	{
+		return -1;
+	}
+	
+	if(isValidIP(value))
+	{
+		return 0;
+	}
+	return -1;
+}
+
 /*int main()
 {
 	char value[100];
 	memset(value,0 ,100);
-	printf("%d\n",configz_countLabel("log.ini","base"));
-	printf("%d\n",configz_countLabel("log.ini","tcp"));
-	printf("%d\n",configz_countLabel("log.ini","udp"));
-	if(configz_readSLKV("log.ini","base","test",value) ==0)
+	char * conffile = "label.ini";
+	printf("%d\n",configz_countLabel(conffile,"base"));
+	printf("%d\n",configz_countLabel(conffile,"tcp"));
+	printf("%d\n",configz_countLabel(conffile,"udp"));
+	if(configz_readString(conffile,"base","test",value,0) ==0)
 	{
 		printf("base   test = %s\n",value);
 	}
-	if(configz_readLKV("log.ini","base","test",value,2) ==0)
+	if(configz_readString(conffile,"base","test",value,2) ==0)
 	{
 		printf("base   test2 = %s\n",value);
 	}
-	if(configz_readLKV("log.ini","base","test",value,3) ==0)
+	if(configz_readString(conffile,"base","test",value,3) ==0)
 	{
 		printf("base   test3 = %s\n",value);
 	}
-	if(configz_readLKV("log.ini","base","test",value,4) ==0)
+	if(configz_readString(conffile,"base","test",value,4) ==0)
 	{
 		printf("base   test4 = %s\n",value);
 	}
+	if(configz_readIP(conffile,"base","ip",value,4) ==0)
+	{
+		printf("base   ip = %s\n",value);
+	}
+	if(configz_readIP(conffile,"base","addr",value,4) ==0)
+	{
+		printf("base   addr = %s\n",value);
+	}
 	return 0;
-}
-*/
+}*/
+
